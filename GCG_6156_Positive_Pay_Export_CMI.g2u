@@ -1,0 +1,221 @@
+program.sub.screenSU.start
+gui.SS_PPOE..create
+gui.SS_PPOE..caption("Generate CSV File")
+gui.SS_PPOE..size(3390,2130)
+gui.SS_PPOE..minx(0)
+gui.SS_PPOE..miny(0)
+gui.SS_PPOE..position(0,0)
+gui.SS_PPOE..event(unload,SS_PPOE_Unload)
+gui.SS_PPOE..alwaysontop(False)
+gui.SS_PPOE..fontname("Arial")
+gui.SS_PPOE..fontsize(7)
+gui.SS_PPOE..forecolor(0)
+gui.SS_PPOE..fontstyle(,,,,)
+gui.SS_PPOE..BackColor(-2147483633)
+gui.SS_PPOE..controlbox(True)
+gui.SS_PPOE..maxbutton(False)
+gui.SS_PPOE..minbutton(False)
+gui.SS_PPOE..mousepointer(1)
+gui.SS_PPOE..moveable(True)
+gui.SS_PPOE..sizeable(False)
+gui.SS_PPOE..ShowInTaskBar(True)
+gui.SS_PPOE..titlebar(True)
+
+gui.SS_PPOE.lbl0.create(label,"Beginning Date",True,1495,295,1,100,100,True,0,Arial,7,-2147483633,0 )
+gui.SS_PPOE.lbl0.defaultvalue("")
+gui.SS_PPOE.lbl0.controlgroup(0)
+gui.SS_PPOE.lbl1.create(label,"Ending Date",True,1495,295,1,100,625,True,0,Arial,7,-2147483633,0 )
+gui.SS_PPOE.lbl1.defaultvalue("")
+gui.SS_PPOE.lbl1.controlgroup(0)
+gui.SS_PPOE.dtpBegDate.create(datepicker)
+gui.SS_PPOE.dtpBegDate.visible(True)
+gui.SS_PPOE.dtpBegDate.size(2995,325)
+gui.SS_PPOE.dtpBegDate.zorder(0)
+gui.SS_PPOE.dtpBegDate.position(100,310)
+gui.SS_PPOE.dtpBegDate.enabled(True)
+gui.SS_PPOE.dtpBegDate.checkbox(False)
+gui.SS_PPOE.dtpBegDate.defaultvalue("")
+gui.SS_PPOE.dtpBegDate.controlgroup(0)
+gui.SS_PPOE.dtpEndDate.create(datepicker)
+gui.SS_PPOE.dtpEndDate.visible(True)
+gui.SS_PPOE.dtpEndDate.size(2995,310)
+gui.SS_PPOE.dtpEndDate.zorder(0)
+gui.SS_PPOE.dtpEndDate.position(100,835)
+gui.SS_PPOE.dtpEndDate.enabled(True)
+gui.SS_PPOE.dtpEndDate.checkbox(False)
+gui.SS_PPOE.dtpEndDate.defaultvalue("")
+gui.SS_PPOE.dtpEndDate.controlgroup(0)
+gui.SS_PPOE.cmdOk.create(button)
+gui.SS_PPOE.cmdOk.caption("Ok")
+gui.SS_PPOE.cmdOk.visible(True)
+gui.SS_PPOE.cmdOk.size(1120,340)
+gui.SS_PPOE.cmdOk.zorder(0)
+gui.SS_PPOE.cmdOk.position(100,1150)
+gui.SS_PPOE.cmdOk.enabled(True)
+gui.SS_PPOE.cmdOk.fontname("Arial")
+gui.SS_PPOE.cmdOk.fontsize(7)
+gui.SS_PPOE.cmdOk.event(click,cmdOk_Click)
+gui.SS_PPOE.cmdOk.defaultvalue("")
+gui.SS_PPOE.cmdOk.controlgroup(0)
+gui.SS_PPOE.dtpBegDate.tabstop(True)
+gui.SS_PPOE.dtpBegDate.tabindex(11)
+gui.SS_PPOE.dtpEndDate.tabstop(True)
+gui.SS_PPOE.dtpEndDate.tabindex(21)
+gui.SS_PPOE.cmdOk.tabstop(True)
+gui.SS_PPOE.cmdOk.tabindex(22)
+program.sub.screenSU.End
+
+Program.Sub.Preflight.Start
+Variable.UDT.uChk.Define("ACCTNUM",String)
+Variable.UDT.uChk.Define("CHKDT",String,CHKDT)
+Variable.UDT.uChk.Define("CHKNO",String,CHKNO)
+Variable.UDT.uChk.Define("GROSS",Float,GROSS)
+Variable.UDT.uChk.Define("TRANS",String,TRANS)
+Variable.UDT.uChk.Define("VEN_NAME",String,VEN_NAME)
+Variable.uGlobal.uChk.Declare("uChk")
+Variable.Global.sAcctNum.Declare(String)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+F.ODBC.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+Gui.SS_PPOE..Show
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_7065-0_Positive_Pay_Export_CMI.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_ppoe_unload)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.Main.End
+
+Program.Sub.cmdOk_Click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdOk_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.sSQL.Declare(String)
+V.Local.dBeg.Declare(Date)
+V.Local.dEnd.Declare(Date)
+V.Local.sFileLoc.Declare(String)
+V.Local.bExists.Declare(Boolean)
+V.Local.iTemp.Declare(Long)
+V.Local.sTemp.Declare(String)
+V.Local.sCSVFile.Declare(String)
+V.Local.ByteArray.Declare(ByteArray)
+V.Local.dCheckDt.Declare(Date)
+V.Local.sCheckDt.Declare(String)
+
+F.Intrinsic.UI.ShowSaveFileDialog("","txt|*.txt",V.Local.sFileLoc)
+
+F.Intrinsic.Control.If(V.Local.sFileLoc,=,"***CANCEL***")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.File.Exists(V.Local.sFileLoc,V.Local.bExists)
+
+F.Intrinsic.Control.If(V.Local.bExists,=,True)
+	F.Intrinsic.UI.Msgbox("The file already exists. Would you like to overwrite the file? If not, click No and try again.","File Exists",4,V.Local.iTemp)
+
+	F.Intrinsic.Control.If(V.Local.iTemp,=,7)
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.UI.InvokeWaitDialog("Generating CSV File. Please Wait...","Generating CSV File")
+V.Local.dBeg.Set(V.Screen.SS_PPOE!dtpBegDate.Value)
+V.Local.dEnd.Set(V.Screen.SS_PPOE!dtpEndDate.Value)
+F.Intrinsic.String.Build("SELECT ACCT_NO, CK_NO AS CHKNO,(Case WHEN CK_Or_Void = 'C' THEN 'I' WHEN CK_OR_VOID = 'V' THEN 'C' END) AS TRANS,Ck_Date AS CHKDT,Amount AS GROSS,Payee AS VEN_NAME FROM V_CHECKS_LOG WHERE Ck_Date BETWEEN '{0}' AND '{1}'",V.Local.dBeg.PervasiveDate,V.Local.dEnd.PervasiveDate,V.Local.sSQL)
+F.ODBC.Connection!con.OpenLocalRecordsetRO("rst",V.Local.sSQL)
+
+F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,<>,True)
+	V.Global.sAcctNum.Set(V.ODBC.con!rst.FieldValTrim!ACCT_NO)
+	V.Local.dCheckDt.Set(V.ODBC.con!rst.FieldValTrim!CHKDT)
+	F.Intrinsic.Control.If(V.Global.sAcctNum,=,"")
+		F.Intrinsic.String.Build("{0}\AccountNum.txt",V.Caller.FilesDir,V.Local.sTemp)
+		F.Intrinsic.File.Exists(V.Local.sTemp,V.Local.bExists)
+
+		'If the file exists make sure that the account number is located in the file. If it doesn't exists or the file is empty exit program.
+		F.Intrinsic.Control.If(V.Local.bExists,=,True)
+			F.Intrinsic.File.File2String(V.Local.sTemp,V.Global.sAcctNum)
+
+			F.Intrinsic.Control.If(V.Global.sAcctNum.Trim,=,"")
+				F.Intrinsic.UI.Msgbox("Unable to find Account Number. File not created. Make sure that the account number is saved in Standard AP Options or AccountNum.txt located in your Global\Files directory. Exiting Program.","Account Number Not Found")
+				F.Intrinsic.Control.CallSub(Ss_ppoe_unload)
+			F.Intrinsic.Control.EndIf
+
+		F.Intrinsic.Control.Else
+			F.Intrinsic.UI.Msgbox("Unable to find Account Number. File not created. Make sure that the account number is saved in Standard AP Options or AccountNum.txt located in your Global\Files directory. Exiting Program.","Account Number Not Found")
+			F.Intrinsic.Control.CallSub(Ss_ppoe_unload)
+		F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.Control.Else
+		V.Global.sAcctNum.Set(V.ODBC.con!rst.FieldValTrim!ACCT_NO)
+	F.Intrinsic.Control.EndIf
+	
+	' Decrypt Account number	
+	F.Intrinsic.Control.Try
+		F.Intrinsic.String.ConvertString2BA(v.Global.sAcctNum, V.Local.ByteArray)
+		F.Global.Encryption.Decrypt(v.Local.ByteArray, v.Global.sAcctNum)
+		V.Global.sAcctNum.Set(V.Global.sAcctNum.Trim)
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription,V.Ambient.ErrorNumber)
+	F.Intrinsic.Control.EndTry
+	
+	'Format Date
+	F.Intrinsic.Control.If(V.Local.dCheckDt, <>, "")
+		F.Intrinsic.String.Format(V.Local.dCheckDt, "MM/DD/YYYY", V.Local.sCheckDt)
+	F.Intrinsic.Control.EndIf	
+
+	F.Intrinsic.Variable.LoadUDTFromRecordset("con","rst","uGlobal.uChk",False)
+	F.Intrinsic.Variable.UDTSetMemberValue(V.uGlobal.uChk!ACCTNUM,V.Global.sAcctNum)
+	F.Intrinsic.Variable.UDTSetMemberValue(V.uGlobal.uChk!CHKDT,V.Local.sCheckDt)
+	F.Intrinsic.Variable.UDTToStringCSV(V.uGlobal.uChk,"ACCTNUM*!*CHKNO*!*TRANS*!*CHKDT*!*GROSS*!*VEN_NAME",V.Local.sCSVFile)
+	F.Intrinsic.File.String2File(V.Local.sFileLoc,V.Local.sCSVFile)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.UI.CloseWaitDialog
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdOk_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_7065-0_Positive_Pay_Export.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_ppoe_unload)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.cmdOk_Click.End
+
+Program.Sub.SS_PPOE_Unload.Start
+F.Intrinsic.Control.SetErrorHandler("SS_PPOE_Unload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+F.ODBC.Connection!con.Close
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("SS_PPOE_Unload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_7065-0_Positive_Pay_Export.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.SS_PPOE_Unload.End
+
+Program.Sub.Comments.Start
+${$0$}$GCG_Postive_Pay_Export$}$BCC$}$9/14/2015 12:11:35 PM$}$False
+Program.Sub.Comments.End
+
